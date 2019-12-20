@@ -22,6 +22,10 @@ type JSONError struct {
 	Path      string     `json:"path"`
 }
 
+func (j *JSONError) Cause() error {
+	return j.Err
+}
+
 func (j *JSONError) setPath(path string) {
 	j.Path = path
 }
@@ -123,16 +127,20 @@ func parseJSONError(status int, value ...interface{}) *JSONError {
 	if errs == nil {
 		errs = make(url.Values)
 	}
-	if err == nil {
-		err = ErrInternalServerError
-	}
 
 	if message == "" {
-		if errors.Is(err, ErrInternalServerError) {
-			message = "Oops! Something went wrong"
+		if err != nil {
+			if errors.Is(err, ErrInternalServerError) {
+				message = "Oops! Something went wrong"
+			} else {
+				message = err.Error()
+			}
 		} else {
-			message = err.Error()
+			message = "Oops! Something went wrong"
 		}
+	}
+	if err == nil {
+		err = errors.New(message)
 	}
 	return &JSONError{
 		Err:       err,
