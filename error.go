@@ -90,7 +90,7 @@ func NewJSONError(statusCode int, err error, code int, message string, errs url.
 	}
 }
 
-func parseJSONError(value ...interface{}) *JSONError {
+func parseJSONError(status int, value ...interface{}) *JSONError {
 	var err error
 	var code int
 	var message string
@@ -118,7 +118,7 @@ func parseJSONError(value ...interface{}) *JSONError {
 		}
 	}
 	if code == 0 {
-		code = http.StatusInternalServerError
+		code = status
 	}
 	if errs == nil {
 		errs = make(url.Values)
@@ -126,6 +126,7 @@ func parseJSONError(value ...interface{}) *JSONError {
 	if err == nil {
 		err = ErrInternalServerError
 	}
+
 	if message == "" {
 		if errors.Is(err, ErrInternalServerError) {
 			message = "Oops! Something went wrong"
@@ -144,7 +145,7 @@ func parseJSONError(value ...interface{}) *JSONError {
 
 // ResponseJSONError create new JSONError struct
 func ResponseJSONError(w http.ResponseWriter, r *http.Request, status int, value ...interface{}) {
-	jsonErr := parseJSONError(value)
+	jsonErr := parseJSONError(status, value...)
 	jsonErr.setPath(r.RequestURI)
 	jsonErr.setHTTPStatusCode(status)
 	ResponseJSON(w, status, jsonErr)
